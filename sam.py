@@ -5,11 +5,10 @@ import numpy as np
 import supervision as sv
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
 from typing import List, TypedDict
-import requests  # For auto-downloading
+import requests
 
-# --- TypedDicts for masks ---
 class MaskMetadata(TypedDict):
-    bbox: List[int]  # [x, y, w, h]
+    bbox: List[int]
     area: float
     predicted_iou: float
     stability_score: float
@@ -22,11 +21,9 @@ class DroneSAM:
     def __init__(self, checkpoint_path=None, model_type="vit_h"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Default checkpoint location
         default_path = os.path.join(os.getcwd(), "weights", "sam_vit_h_4b8939.pth")
         os.makedirs(os.path.dirname(default_path), exist_ok=True)
 
-        # Auto-download if checkpoint is missing
         if checkpoint_path and os.path.exists(checkpoint_path):
             actual_path = checkpoint_path
         elif os.path.exists(default_path):
@@ -47,26 +44,37 @@ class DroneSAM:
         self.sam.to(self.device)
         self.sam.eval()
 
-        self.points_per_side = 64
+        # REDUCED density for speed: 32x32 = 1024 points instead of 64x64 = 4096
+        self.points_per_side = 32
 
-        # Automatic mask generator
         self.mask_generator = SamAutomaticMaskGenerator(
             model=self.sam,
             points_per_side=self.points_per_side,
-            pred_iou_thresh=0.70,
-            stability_score_thresh=0.85,
-            min_mask_region_area=100,
+            pred_iou_thresh=0.75,  # Higher threshold = fewer masks
+            stability_score_thresh=0.88,  # Higher = more stable masks only
+            min_mask_region_area=200,  # Larger minimum = fewer tiny masks
         )
 
-        # Prompted mask generation
         self.predictor = SamPredictor(self.sam)
 
     def generate_masks_from_prompts(self, image_rgb: np.ndarray, prompts: List[str]) -> List[SAMMask]:
-        print(f"Generating geometric masks (Density: {self.points_per_side}^2 points)...")
+        """
+        OPTIMIZED: Reduced point density and stricter filtering
+        """
+        print(f"Generating SAM masks (Density: {self.points_per_side}x{self.points_per_side} = {self.points_per_side**2} points)...")
+        
         sam_results = self.mask_generator.generate(image_rgb)
+        
+        # FILTER: Keep only high-quality masks
+        filtered_results = [
+            res for res in sam_results 
+            if res['stability_score'] > 0.85 and res['predicted_iou'] > 0.7
+        ]
+        
+        print(f"  Generated {len(sam_results)} masks, filtered to {len(filtered_results)} high-quality masks")
 
         masks: List[SAMMask] = []
-        for res in sam_results:
+        for res in filtered_results:
             masks.append({
                 "mask": res["segmentation"],
                 "metadata": {
@@ -76,16 +84,20 @@ class DroneSAM:
                     "stability_score": res["stability_score"]
                 }
             })
-        print(f"SAM finished. Processed {len(masks)} masks.")
+        
+        print(f"SAM complete: {len(masks)} masks ready for fusion")
         return masks
 
     def visualize_masks(self, image_bgr: np.ndarray, masks: List[SAMMask]):
+        """Visualize SAM segmentation"""
         if not masks:
             return image_bgr
+        
         detections = sv.Detections(
             xyxy=np.array([m["metadata"]["bbox"] for m in masks]),
             mask=np.array([m["mask"] for m in masks])
         )
+        
         # Convert bbox format [x,y,w,h] -> [x1,y1,x2,y2]
         detections.xyxy[:, 2] += detections.xyxy[:, 0]
         detections.xyxy[:, 3] += detections.xyxy[:, 1]
@@ -93,20 +105,3 @@ class DroneSAM:
         mask_annotator = sv.MaskAnnotator(color_lookup=sv.ColorLookup.INDEX)
         annotated_image = mask_annotator.annotate(scene=image_bgr.copy(), detections=detections)
         return annotated_image
-
-if __name__ == "__main__":
-    # Test script for local use
-    image_path = "data/360-6.jpg"
-    image_bgr = cv2.imread(image_path)
-    if image_bgr is not None:
-        image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
-        sam_engine = DroneSAM()
-        masks = sam_engine.generate_masks_from_prompts(image_rgb, ["survivors", "buildings"])
-        print(f"Generated {len(masks)} masks")
-
-        # Streamlit-compatible display (replace cv2.imshow)
-        from PIL import Image
-        import streamlit as st
-        annotated = sam_engine.visualize_masks(image_bgr, masks)
-        annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
-        st.image(annotated_rgb, caption="SAM Segmentation", use_column_width=True)
