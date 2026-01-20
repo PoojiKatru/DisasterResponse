@@ -1,19 +1,38 @@
-streamlit
-numpy
-opencv-python-headless
-Pillow
-matplotlib
-torch
-segment-anything @ git+https://github.com/facebookresearch/segment-anything.git
+# Core dependencies
+numpy==1.24.3
+Pillow==10.0.0
+
+# PyTorch - install first (CPU version for compatibility)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.0.1+cpu
+torchvision==0.15.2+cpu
+
+# Computer Vision
+opencv-python-headless==4.8.0.74
+
+# Transformers and Vision models
+transformers==4.30.2
+accelerate==0.20.3
+ftfy==6.1.1
+einops==0.6.1
+
+# Segment Anything
+git+https://github.com/facebookresearch/segment-anything.git
+
+# Supervision for visualization
 supervision==0.23.0
-streamlit-image-coordinates
-tqdm
-requests
-transformers
-ftfy
-einops
-accelerate
-diffusers
-protobuf<=4.21.12
+
+# Streamlit and UI
+streamlit==1.28.0
+streamlit-image-coordinates==0.1.6
+
+# Utilities
+matplotlib==3.7.2
+tqdm==4.66.1
+requests==2.31.0
+
+# Protobuf version constraint for compatibility
+protobuf==3.20.3
+
+# Pydantic version for compatibility
 pydantic==1.10.7
-torchvision
