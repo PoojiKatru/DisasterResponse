@@ -1,38 +1,35 @@
-# Core dependencies
-numpy==1.24.3
-Pillow==10.0.0
+# Core dependencies - install first
+numpy<2.0.0
+Pillow
 
-# PyTorch - install first (CPU version for compatibility)
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.0.1+cpu
-torchvision==0.15.2+cpu
+# PyTorch (CPU-only for Streamlit Cloud)
+torch
+torchvision
 
 # Computer Vision
-opencv-python-headless==4.8.0.74
+opencv-python-headless
 
 # Transformers and Vision models
-transformers==4.30.2
-accelerate==0.20.3
-ftfy==6.1.1
-einops==0.6.1
+transformers
+accelerate
+ftfy
+einops
 
-# Segment Anything
-git+https://github.com/facebookresearch/segment-anything.git
+# Segment Anything - direct from GitHub
+segment-anything @ git+https://github.com/facebookresearch/segment-anything.git
 
 # Supervision for visualization
 supervision==0.23.0
 
 # Streamlit and UI
-streamlit==1.28.0
-streamlit-image-coordinates==0.1.6
+streamlit
+streamlit-image-coordinates
 
 # Utilities
-matplotlib==3.7.2
-tqdm==4.66.1
-requests==2.31.0
+matplotlib
+tqdm
+requests
 
-# Protobuf version constraint for compatibility
-protobuf==3.20.3
-
-# Pydantic version for compatibility
-pydantic==1.10.7
+# Compatibility fixes
+protobuf<4.0.0
+pydantic<2.0.0
