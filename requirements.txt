@@ -1,0 +1,13 @@
+streamlit
+opencv-python-headless
+numpy
+Pillow
+torch
+torchvision
+transformers
+segment-anything
+supervision
+tqdm
+matplotlib
+streamlit-image-coordinates
+watchdog
