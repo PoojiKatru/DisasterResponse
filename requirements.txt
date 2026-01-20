@@ -11,3 +11,6 @@ tqdm
 matplotlib
 streamlit-image-coordinates
 watchdog
+opencv-python
+pyopengl
+pythreejs
