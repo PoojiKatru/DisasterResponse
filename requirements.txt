@@ -16,3 +16,4 @@ accelerate
 diffusers
 protobuf<=4.21.12
 pydantic==1.10.7
+torchvision
