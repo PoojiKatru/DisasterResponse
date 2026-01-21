@@ -9,11 +9,50 @@ from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration, BlipForQuestionAnswering
 from typing import List, TypedDict, Optional
 
+try:
+    import streamlit as st
+    HAS_STREAMLIT = True
+except ImportError:
+    HAS_STREAMLIT = False
+
 class DetectedObject(TypedDict):
     label: str
     role: str  # 'target', 'obstacle', 'hazard', 'clear'
     priority: int  # 10 (highest) to 1 (lowest)
     metadata: Optional[dict]
+
+
+def get_device():
+    if torch.backends.mps.is_available():
+        return 'mps'
+    elif torch.cuda.is_available():
+        return 'cuda'
+    return 'cpu'
+
+
+def _load_vlm_models():
+    """Load VLM models (cached by Streamlit if available)"""
+    device = get_device()
+    print(f"Loading VLM models on {device}...")
+
+    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+    caption_model = BlipForConditionalGeneration.from_pretrained(
+        "Salesforce/blip-image-captioning-base"
+    ).to(device)
+
+    qa_processor = BlipProcessor.from_pretrained("Salesforce/blip-vqa-base")
+    qa_model = BlipForQuestionAnswering.from_pretrained(
+        "Salesforce/blip-vqa-base"
+    ).to(device)
+
+    print("VLM models loaded!")
+    return processor, caption_model, qa_processor, qa_model, device
+
+
+# Apply Streamlit caching if available
+if HAS_STREAMLIT:
+    _load_vlm_models = st.cache_resource(show_spinner="Loading VLM models... (this may take a few minutes on first run)")(_load_vlm_models)
+
 
 class SatelliteVLM:
     """
@@ -21,34 +60,9 @@ class SatelliteVLM:
     """
     
     def __init__(self, device=None):
-        if device is None:
-            if torch.backends.mps.is_available():
-                self.device = 'mps'
-            elif torch.cuda.is_available():
-                self.device = 'cuda'
-            else:
-                self.device = 'cpu'
-        else:
-            self.device = device
-            
-        print(f"Initializing VLM on {self.device}...")
-        
-        try:
-            # Use base models for speed
-            self.processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-            self.caption_model = BlipForConditionalGeneration.from_pretrained(
-                "Salesforce/blip-image-captioning-base"
-            ).to(self.device)
-            
-            self.qa_processor = BlipProcessor.from_pretrained("Salesforce/blip-vqa-base")
-            self.qa_model = BlipForQuestionAnswering.from_pretrained(
-                "Salesforce/blip-vqa-base"
-            ).to(self.device)
-            
-            print("VLM ready!\n")
-        except Exception as e:
-            print(f"Error loading model: {e}")
-            raise
+        # Use cached model loading
+        self.processor, self.caption_model, self.qa_processor, self.qa_model, self.device = _load_vlm_models()
+        print(f"VLM ready on {self.device}!\n")
     
     def caption_image(self, image_path, prompt=None):
         """Generate a caption describing the image"""
