@@ -1,35 +1,18 @@
-# Core dependencies - install first
-numpy<2.0.0
+numpy
 Pillow
-
-# PyTorch (CPU-only for Streamlit Cloud)
 torch
 torchvision
-
-# Computer Vision
 opencv-python-headless
-
-# Transformers and Vision models
 transformers
 accelerate
 ftfy
 einops
-
-# Segment Anything - direct from GitHub
-segment-anything @ git+https://github.com/facebookresearch/segment-anything.git
-
-# Supervision for visualization
+git+https://github.com/facebookresearch/segment-anything.git
 supervision==0.23.0
-
-# Streamlit and UI
 streamlit
 streamlit-image-coordinates
-
-# Utilities
 matplotlib
 tqdm
 requests
-
-# Compatibility fixes
 protobuf<4.0.0
 pydantic<2.0.0
