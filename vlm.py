@@ -94,29 +94,43 @@ class SatelliteVLM:
     def get_scene_semantics(self, image_path: str) -> List[DetectedObject]:
         """
         OPTIMIZED: Fast single-pass analysis for disaster response
-        Instead of 9+ calls, we do 3 targeted questions
+        Instead of 9+ calls, we do 4 targeted questions
         """
-        print("Running fast VLM analysis (3 inference calls)...")
-        
+        print("Running fast VLM analysis (4 inference calls)...")
+
         detected_objects: List[DetectedObject] = []
-        
+
         # 1. General scene understanding (1 call)
         scene_type = self.caption_image(image_path, prompt="an aerial view of")
         print(f"  Scene: {scene_type}")
-        
+
         # 2. Obstacle detection (1 call)
         obstacles = self.answer_question(image_path, "What obstacles are visible?")
         print(f"  Obstacles: {obstacles}")
-        
-        # 3. Hazard detection (1 call)  
+
+        # 3. Hazard detection (1 call)
         hazards = self.answer_question(image_path, "Are there any hazards or dangers?")
         print(f"  Hazards: {hazards}")
+
+        # 4. Person/people detection (1 call)
+        people = self.answer_question(image_path, "Are there any people or humans visible?")
+        print(f"  People: {people}")
         
         # Parse responses into structured data
         scene_lower = scene_type.lower()
         obstacles_lower = obstacles.lower()
         hazards_lower = hazards.lower()
-        
+        people_lower = people.lower()
+
+        # Detect PEOPLE (rescue targets - highest priority)
+        if any(word in people_lower for word in ["yes", "people", "person", "human", "man", "woman", "child", "crowd", "group"]):
+            detected_objects.append({
+                "label": "people",
+                "role": "target",
+                "priority": 10,
+                "metadata": {"description": people}
+            })
+
         # Detect ROADS (navigable areas - mark as clear)
         if any(word in scene_lower for word in ["road", "street", "highway", "pavement"]):
             detected_objects.append({
