@@ -18,7 +18,7 @@ An AI-powered drone rescue path planning system that uses satellite imagery anal
 - **VLM Analysis**: Uses BLIP to understand scene semantics (roads, buildings, hazards)
 - **SAM Segmentation**: Segment Anything Model for precise obstacle detection
 - **Path Planning**: A* pathfinding with obstacle avoidance
-- **Interactive UI**: Click to select rescue targets and mission waypoints
+- **UI**: Click to select rescue targets and mission waypoints
 
 ## Usage
 
