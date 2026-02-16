@@ -36,3 +36,5 @@ An AI-powered drone rescue path planning system that uses satellite imagery anal
 - OpenCV
 
 Link to Research: https://docs.google.com/document/d/1XtkK8hXuKcjssPEIW1Q-T43hZcD1i0HELhZFV-lBmLQ/edit?tab=t.0
+
+
